@@ -33,6 +33,7 @@ export type ManEntries = {
   movingTask: ManPage;
 
   extracting: ManPage;
+  groupManagement: ManPage;
 };
 
 type ManEntryKey = keyof ManEntries;
@@ -60,6 +61,7 @@ class Help implements ManEntries {
   movingTask: ManPage;
   extracting: ManPage;
   deleting: ManPage;
+  groupManagement: ManPage;
 
   ////////////////////
 
@@ -134,12 +136,13 @@ class Help implements ManEntries {
 
     this.creatingTask = {
       title: 'Creating a task',
-      prototype: 'task a [<task>] [<task name>] [-d <description>] [-s <state>] [global args]',
+      prototype: 'task a [<task>] [<task name>] [-d <description>] [-s <state>] [-g <group>] [global args]',
       argDef: [
         '<task> : Task id uppon which you want to add a child subtask',
         '<name> : Task name',
         '-d <description> : Task description',
         '-s <state> : Task state defined by the config file',
+        '-g <group> : Task group defined in the meta data',
       ],
       furtherDescription: ["If no args are provided after 'a' you will enter interactive mode to create your task"],
       globalArgs: true,
@@ -147,12 +150,13 @@ class Help implements ManEntries {
 
     this.editing = {
       title: 'Editing',
-      prototype: 'task e <task(s)> [<new name>] [-d <description>] [-s <state>] [global args]',
+      prototype: 'task e <task(s)> [<new name>] [-d <description>] [-s <state>] [-g <group>] [global args]',
       argDef: [
         "<task(s)> : The id of the task you want to edit, you can pass multiple by separating the ids by ',' without space",
         '<new name> : Edit task name',
         '-d <description> : Edit task description',
         '-s <state> : Edit task state defined by the config file',
+        '-g <group> : Edit task group defined in the meta data',
       ],
       furtherDescription: ["If no args are provided after 'e' you will enter interactive mode to edit your task"],
       globalArgs: true,
@@ -208,6 +212,18 @@ class Help implements ManEntries {
       ],
       globalArgs: true,
     };
+
+    this.groupManagement = {
+      title: 'Managing groups',
+      prototype: 'task g [add|remove] [<name>] [<color>]',
+      argDef: [
+        'add <name> <color> : Add a new known group with a hex color',
+        'remove <name> : Remove a group from metadata',
+        '(no args) : List all defined groups',
+      ],
+      furtherDescription: ['Groups are used to categorize tasks and add color coding to the display'],
+      globalArgs: false,
+    };
   }
 
   ////////////////////
@@ -228,6 +244,7 @@ class Help implements ManEntries {
       'movingTask',
       'deleting',
       'extracting',
+      'groupManagement',
     ];
 
     entries.forEach((entry) => {
@@ -268,6 +285,9 @@ class Help implements ManEntries {
         break;
       case Action.EXTRACT:
         toReturn = this.getMan('extracting');
+        break;
+      case Action.GROUP:
+        toReturn = this.getMan('groupManagement');
         break;
     }
 

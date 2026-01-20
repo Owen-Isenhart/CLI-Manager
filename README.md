@@ -98,6 +98,16 @@ task storage [<relative path>] # Create a task storage file, path optional
         "hexColor": "#66bb6a",
         "icon": "✔"
       }
+    ],
+    "groups": [
+      {
+        "name": "school",
+        "hexColor": "#4287f5"
+      },
+      {
+        "name": "work",
+        "hexColor": "#ff5252"
+      }
     ]
   },
   "datas": [
@@ -105,7 +115,8 @@ task storage [<relative path>] # Create a task storage file, path optional
       "name": "Add more stuff",
       "description": "There's a lot of things to do",
       "state": "todo",
-      "id": 0
+      "id": 0,
+      "group": "work"
     }
   ]
 }
@@ -117,6 +128,11 @@ An `ordered` array of objects that defined task state progression, feel free to 
 
 > But every tasks of a storage file need to have their state listed in the meta.states
 
+_groups_:
+
+An array of objects defining task categories. Tasks assigned to a group will display the group name in the specified color.
+
+> But every tasks of a storage file need to have their state listed in the meta.states
 #### The config file
 
 **Optional** file named `task.config.json` in your working directory, it defines the default argument to pass to the CLI.
@@ -156,7 +172,7 @@ Can either be passed as CLI arguments or stored in the [config file](#the-config
 | --hide-completed     | --show-completed   | "hideCompleted": true                    | Hide tasks which reached final state      |
 | --hide-tree          | /                  | "hideTree": true                         | Hide tree branches                        |
 | --no-print           | --print            | "shouldNotPrintAfter": true              | Don't print task list after edition       |
-| --group \<attribute> | /                  | "group": "state"                         | Group by attribute (state, id, priority)  |
+| --group \<attribute> | /                  | "group": "state"                         | Group by attribute (state, id, priority, group)  |
 | --sort \<asc\| desc> | /                  | "sort": "desc"                           | Sort order                                |
 | --clear              | --no-clear         | "clearBefore": false                     | Clear before printing                     |
 
@@ -193,6 +209,11 @@ task e 9,7,2 -s 'to test'	# Change state to 'to test'
 task c 7	# Put task to final state, 'Check'
 task i 11,14	# Pass tasks 11 and 14 to next state, "Increment"
 task i 11,14 -r	# Pass tasks 11 and 14 and their subtasks to next state, "Increment"
+
+# Managing Groups
+task g # List all defined groups in metadata
+task g add 'personal' '#ff8f00' # Add a new known group with a color
+task g remove 'personal' # Remove a group from metadata
 
 # Moving tasks
 task mv 9,7,11 3	# Move multiple tasks and subtasks to task as subtasks (maintining tree structure)
