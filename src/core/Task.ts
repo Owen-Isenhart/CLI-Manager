@@ -1,7 +1,7 @@
 import chalk from 'chalk';
 
 import { PrinterConfig } from './Printer';
-import { TaskState } from './Storage';
+import { Meta } from './Storage';
 
 ////////////////////////////////////////
 
@@ -17,6 +17,7 @@ export type ITask = {
   timestamp?: string;
   state?: string;
   priority?: number;
+  group?: string;
 };
 
 export interface StringifyArgs extends PrinterConfig {
@@ -38,6 +39,7 @@ export class Task implements ITask {
   state?: string;
   priority?: number;
   tags?: string[];
+  group?: string;
 
   /////
 
@@ -78,7 +80,8 @@ export class Task implements ITask {
    *
    * TODO implement hide timestamp and sub counter
    */
-  stringify = (availableStates: TaskState[], options?: StringifyArgs) => {
+  stringify = (meta: Meta, options?: StringifyArgs) => {
+    const { states, groups = [] } = meta;
     const INDENT_MARKER = '    ';
     const DEFAULT_SUBTASK_LEVEL = 1;
     const INDENT_DESCRIPTION = '  ';
@@ -114,8 +117,8 @@ export class Task implements ITask {
 
     ////////////////////
 
-    const isFinalState = this.state === availableStates[availableStates.length - 1].name;
-    const taskState = availableStates.filter((state) => this.state === state.name)[0];
+    const isFinalState = this.state === states[states.length - 1].name;
+    const taskState = states.filter((state) => this.state === state.name)[0];
 
     const coloredID = chalk.hex(taskState.hexColor)(`${this.id}.`);
 
@@ -151,7 +154,15 @@ export class Task implements ITask {
     const coloredName = isFinalState ? chalk.strikethrough.grey(this.name) : this.name;
     const coloredPriority = this.priority ? chalk.bold.red(' ' + getPriorityText()) : '';
 
-    const fullLine = `${coloredID}${MARGIN}${indentation}${coloredIcon}` + coloredPriority + ` ${coloredName}`;
+    let coloredGroup = '';
+    if (this.group) {
+      const groupData = groups.find((g) => g.name === this.group);
+      const color = groupData ? groupData.hexColor : '#ffffff';
+      coloredGroup = chalk.hex(color)(` [${this.group}]`);
+    }
+
+    const fullLine =
+      `${coloredID}${MARGIN}${indentation}${coloredIcon}` + coloredPriority + coloredGroup + ` ${coloredName}`;
     toReturn.push(fullLine);
 
     ////////////////////
@@ -218,7 +229,7 @@ export class Task implements ITask {
             isSubTask: true,
             isLastParent: isLastChild,
           };
-          const result = sub.stringify(availableStates, childOptions);
+          const result = sub.stringify(meta, childOptions);
 
           toReturn = [...toReturn, ...result];
         }

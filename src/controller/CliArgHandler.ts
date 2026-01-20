@@ -16,6 +16,7 @@ export enum Action {
   INCREMENT = 'i',
   MOVE = 'mv',
   EXTRACT = 'x',
+  GROUP = 'g',
 }
 
 // TODO refactor with array string type like group & sort and aggreagate between global args and commands
@@ -46,7 +47,8 @@ export enum OnOffFlag {
   SHOW_COMPLETED = '--show-completed',
 }
 
-export enum ValueFlag { // TODO same as above
+export enum ValueFlag {
+  // TODO same as above
   STORAGE_FILE = '--storage',
   DEPTH = '--depth',
   GROUP_BY = '--group',
@@ -54,6 +56,7 @@ export enum ValueFlag { // TODO same as above
   STATE = '-s',
   DESCRIPTION = '-d',
   TAG = '-t',
+  GROUP = '-g',
 }
 
 type FlagType = ValueFlag | BooleanFlag | OnOffFlag;
@@ -70,6 +73,7 @@ export interface DataAttributes {
   description?: string;
   state?: string;
   priority?: number;
+  group?: string;
 }
 
 export interface HandledFlags {
@@ -128,7 +132,12 @@ export class CliArgHandler {
       isThereCliFlagCommand: isHelpNeeded || isVersion,
       isThereCLIArgs: this.words.length > 0,
       isThereOnlyOneCLIArgs: this.words.length === 1,
-      isThereDataAttribute: !!(dataAttributes?.state || dataAttributes?.description || dataAttributes?.priority),
+      isThereDataAttribute: !!(
+        dataAttributes?.state ||
+        dataAttributes?.description ||
+        dataAttributes?.priority ||
+        dataAttributes?.group
+      ),
     };
   }
 
@@ -235,12 +244,14 @@ export class CliArgHandler {
   private getDataAttributes = (): DataAttributes => {
     const state = this.getValueFlag(ValueFlag.STATE) as string;
     const description = this.getValueFlag(ValueFlag.DESCRIPTION) as string;
+    const group = this.getValueFlag(ValueFlag.GROUP) as string;
     const priority = this.getPriority();
 
     return {
       state,
       description,
       priority,
+      group,
     };
   };
 

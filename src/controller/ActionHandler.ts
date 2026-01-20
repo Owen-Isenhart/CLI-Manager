@@ -30,7 +30,7 @@ export class ActionHandler {
     const { argHandler, storage, config, printer, finalStorageLocation } = this.mainController;
     const { words, flags, infos } = argHandler;
     const { dataAttributes, isRecursive } = flags;
-    const { state, description, priority } = dataAttributes;
+    const { state, description, priority, group } = dataAttributes;
     const [firstArg, secondArg, thirdArg] = words;
 
     if (!storage) throw new StorageError(`Can't find the task storage file '${finalStorageLocation}'`);
@@ -50,6 +50,7 @@ export class ActionHandler {
             state: state || storage.meta.states[0].name,
             description,
             priority,
+            group,
           });
 
           let subTaskOf = undefined;
@@ -90,12 +91,14 @@ export class ActionHandler {
             state,
             description,
             priority,
+            group,
           };
 
           if (!name) delete newAttributes.name;
           if (!state) delete newAttributes.state;
           if (!description) delete newAttributes.description;
           if (!priority) delete newAttributes.priority;
+          if (!group) delete newAttributes.group;
 
           const { ids, textID, textTask } = idsController(storage, secondArg.value as number | number[]);
 
@@ -210,6 +213,44 @@ export class ActionHandler {
         newPrinter.setView('full');
         newPrinter.addFeedback(`${textTask} '${textID}' extracted to ${destination}`).print();
 
+        break;
+      }
+
+      ////////////////////
+
+      case Action.GROUP: {
+        const subAction = secondArg?.value as string;
+        const groupName = thirdArg?.value as string;
+        const color = words[3]?.value as string;
+
+        if (subAction === 'add') {
+          if (!groupName || !color) {
+            printer.addFeedback('Usage: task g add <name> <color>').print();
+            return;
+          }
+          const existing = storage.meta.groups.find((g) => g.name === groupName);
+          if (existing) {
+            existing.hexColor = color;
+            printer.addFeedback(`Group '${groupName}' updated with color ${color}`);
+          } else {
+            storage.meta.groups.push({ name: groupName, hexColor: color });
+            printer.addFeedback(`Group '${groupName}' added with color ${color}`);
+          }
+          storage.save();
+        } else if (subAction === 'remove') {
+          if (!groupName) {
+            printer.addFeedback('Usage: task g remove <name>').print();
+            return;
+          }
+          storage.meta.groups = storage.meta.groups.filter((g) => g.name !== groupName);
+          storage.save();
+          printer.addFeedback(`Group '${groupName}' removed`);
+        } else {
+          printer
+            .addFeedback('Groups management:')
+            .addFeedback(storage.meta.groups.map((g) => `- ${g.name} (${g.hexColor})`));
+        }
+        printer.print();
         break;
       }
     }

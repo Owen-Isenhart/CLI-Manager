@@ -97,11 +97,7 @@ export class Printer {
       this.cloneStorage().tasks.retrieveTask(id, ({ task }) => {
         list.push(task);
 
-        toReturn = [
-          ...toReturn,
-          ...task.stringify(this.storage.meta.states, { ...this.config, hideCompleted: false }),
-          '',
-        ];
+        toReturn = [...toReturn, ...task.stringify(this.storage.meta, { ...this.config, hideCompleted: false }), ''];
 
         if (index !== theTasksID.length - 1) toReturn.push(this.separator('-'), '');
         else toReturn.push(list.getStats(this.storage.meta), '');
@@ -116,9 +112,7 @@ export class Printer {
   private getFullView = () => {
     const toReturn: string[] = [];
 
-    this.cloneStorage().tasks.forEach((task) =>
-      toReturn.push(...task.stringify(this.storage.meta.states, this.config)),
-    );
+    this.cloneStorage().tasks.forEach((task) => toReturn.push(...task.stringify(this.storage.meta, this.config)));
 
     toReturn.push('', ...this.getFileStats());
 
@@ -204,7 +198,7 @@ export class Printer {
   };
 
   // TODO
-  /*   private wrapText = (text: string, indentLevel: number = 0, marginLeft: number = 0) => {
+  /* private wrapText = (text: string, indentLevel: number = 0, marginLeft: number = 0) => {
     const toReturn: string[] = [];
 
     let space = '';

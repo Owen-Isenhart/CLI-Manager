@@ -9,12 +9,13 @@ import { Task } from './Task';
 export class Prompt {
   static addTask = async (storage: Storage, subTaskOfId?: number): Promise<number> => {
     try {
-      const { name, state, description } = await doPrompt(storage);
+      const { name, state, description, group } = await doPrompt(storage);
 
       const task: Task = new Task({
         name: name.trim(),
         state,
         description: description.trim(),
+        group: group !== 'none' ? group : undefined,
       });
 
       const id = storage.addTask(task, subTaskOfId);
@@ -36,12 +37,13 @@ export class Prompt {
         chalk.italic('Press tab to edit previously set text, start typing for a new value or use space to remove it\n'),
       );
 
-      const { name, state, description } = await doPrompt(storage, beforeTask);
+      const { name, state, description, group } = await doPrompt(storage, beforeTask);
 
       const afterTask: Task = new Task({
         name: name.trim(),
         state: state,
         description: description.trim(),
+        group: group !== 'none' ? group : undefined,
       });
 
       storage.editTask([taskId], afterTask);
@@ -57,8 +59,14 @@ const getStateChoices = (storage: Storage) => {
   return storage.meta.states.map(({ name }) => ({ title: name, value: name }));
 };
 
+const getGroupChoices = (storage: Storage) => {
+  const groups = storage.meta.groups || [];
+  return [{ title: 'None', value: 'none' }, ...groups.map(({ name }) => ({ title: name, value: name }))];
+};
+
 const doPrompt = async (storage: Storage, task?: Task): Promise<prompts.Answers<Partial<keyof Task>>> => {
   const availableStates = getStateChoices(storage);
+  const availableGroups = getGroupChoices(storage);
 
   ////////
 
@@ -75,6 +83,13 @@ const doPrompt = async (storage: Storage, task?: Task): Promise<prompts.Answers<
     choices: availableStates,
   };
 
+  const groupQuestion: prompts.PromptObject<keyof Task> = {
+    type: 'select',
+    name: 'group',
+    message: 'Group',
+    choices: availableGroups,
+  };
+
   const descriptionQuestion: prompts.PromptObject<keyof Task> = {
     type: 'text',
     name: 'description',
@@ -89,10 +104,13 @@ const doPrompt = async (storage: Storage, task?: Task): Promise<prompts.Answers<
     const indexOfChosenState = availableStates.findIndex(({ value }) => value === task.state);
     stateQuestion.initial = indexOfChosenState;
 
+    const indexOfChosenGroup = availableGroups.findIndex(({ value }) => value === task.group);
+    groupQuestion.initial = indexOfChosenGroup >= 0 ? indexOfChosenGroup : 0;
+
     descriptionQuestion.initial = task.description;
   }
 
   ////////
 
-  return prompts([textQuestion, stateQuestion, descriptionQuestion]);
+  return prompts([textQuestion, stateQuestion, groupQuestion, descriptionQuestion]);
 };

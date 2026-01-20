@@ -26,6 +26,7 @@ export const DEFAULT_STORAGE_DATAS: StorageFile = {
         icon: '✔',
       },
     ],
+    groups: [],
   },
   datas: [
     {
@@ -41,12 +42,18 @@ export const DEFAULT_STORAGE_DATAS: StorageFile = {
 
 export type Meta = {
   states: TaskState[];
+  groups?: TaskGroup[];
 };
 
 export type TaskState = {
   name: string;
   hexColor: string;
   icon: string;
+};
+
+export type TaskGroup = {
+  name: string;
+  hexColor: string;
 };
 
 export type StorageFile = {
@@ -73,6 +80,7 @@ export class Storage {
     const { meta, datas } = System.readJSONFile(this.relativePath) as StorageFile;
     this.tasks = new TaskList(datas, meta);
     this.meta = meta;
+    if (!this.meta.groups) this.meta.groups = [];
   }
 
   ////////////////////////////////////////

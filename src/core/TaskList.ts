@@ -13,7 +13,7 @@ import { Meta } from './Storage';
 
 ////////////////////////////////////////
 
-export const handledGroupings = ['state', 'priority', 'id'] as const;
+export const handledGroupings = ['state', 'priority', 'id', 'group'] as const;
 export type GroupByType = (typeof handledGroupings)[number];
 
 export const handledOrder = ['asc', 'desc'] as const;
@@ -152,7 +152,12 @@ export class TaskList extends Array<Task> {
 
         const impactedTasks = isRecurive ? task.straightTask() : [task];
 
-        for (const [k, v] of Object.entries(newAttributes)) impactedTasks.forEach((aTask) => (aTask[k] = v));
+        for (const [k, v] of Object.entries(newAttributes)) {
+          // prevent overwriting id
+          if (k !== 'id' && v !== undefined) {
+            impactedTasks.forEach((aTask) => (aTask[k] = v));
+          }
+        }
       });
     });
 
@@ -353,6 +358,20 @@ export class TaskList extends Array<Task> {
           if (a.id === b.id) throw new Error('Impossible case : A task id should be unique');
 
           return a.id < b.id ? -1 : 1;
+        };
+
+        break;
+      }
+
+      //////////
+
+      case 'group': {
+        sortFunction = (a: Task, b: Task) => {
+          if (!a.group && !b.group) return 0;
+          if (!a.group) return -1;
+          if (!b.group) return 1;
+
+          return a.group.localeCompare(b.group);
         };
 
         break;
