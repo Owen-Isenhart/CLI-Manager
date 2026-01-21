@@ -2,21 +2,31 @@ import prompts from 'prompts';
 import chalk from 'chalk';
 
 import { Storage } from './Storage';
-import { Task } from './Task';
+import { ITask, Task } from './Task';
 
 ////////////////////////////////////////
 
 export class Prompt {
   static addTask = async (storage: Storage, subTaskOfId?: number): Promise<number> => {
     try {
-      const { name, state, description, group } = await doPrompt(storage);
+      const { name, state, description, group, dueDate, template } = await doPrompt(storage);
 
-      const task: Task = new Task({
+      let taskData: ITask = {
         name: name.trim(),
         state,
         description: description.trim(),
         group: group !== 'none' ? group : undefined,
-      });
+        dueDate,
+      };
+
+      if (template && template !== 'none') {
+        const templateData = storage.meta.templates?.find((t) => t.name === template);
+        if (templateData) {
+          taskData.subtasks = templateData.subtasks;
+        }
+      }
+
+      const task: Task = new Task(taskData);
 
       const id = storage.addTask(task, subTaskOfId);
 
@@ -37,13 +47,14 @@ export class Prompt {
         chalk.italic('Press tab to edit previously set text, start typing for a new value or use space to remove it\n'),
       );
 
-      const { name, state, description, group } = await doPrompt(storage, beforeTask);
+      const { name, state, description, group, dueDate } = await doPrompt(storage, beforeTask);
 
       const afterTask: Task = new Task({
         name: name.trim(),
         state: state,
         description: description.trim(),
         group: group !== 'none' ? group : undefined,
+        dueDate,
       });
 
       storage.editTask([taskId], afterTask);
@@ -64,9 +75,15 @@ const getGroupChoices = (storage: Storage) => {
   return [{ title: 'None', value: 'none' }, ...groups.map(({ name }) => ({ title: name, value: name }))];
 };
 
+const getTemplateChoices = (storage: Storage) => {
+  const templates = storage.meta.templates || [];
+  return [{ title: 'None', value: 'none' }, ...templates.map(({ name }) => ({ title: name, value: name }))];
+};
+
 const doPrompt = async (storage: Storage, task?: Task): Promise<prompts.Answers<Partial<keyof Task>>> => {
   const availableStates = getStateChoices(storage);
   const availableGroups = getGroupChoices(storage);
+  const availableTemplates = getTemplateChoices(storage);
 
   ////////
 
@@ -96,6 +113,19 @@ const doPrompt = async (storage: Storage, task?: Task): Promise<prompts.Answers<
     message: 'Description',
   };
 
+  const dueDateQuestion: prompts.PromptObject<keyof Task> = {
+    type: 'text',
+    name: 'dueDate',
+    message: 'Due Date (DD/MM/YYYY)',
+  };
+
+  const templateQuestion: prompts.PromptObject<keyof Task> = {
+    type: 'select',
+    name: 'template',
+    message: 'Template',
+    choices: availableTemplates,
+  };
+
   ////////
 
   if (task) {
@@ -108,9 +138,15 @@ const doPrompt = async (storage: Storage, task?: Task): Promise<prompts.Answers<
     groupQuestion.initial = indexOfChosenGroup >= 0 ? indexOfChosenGroup : 0;
 
     descriptionQuestion.initial = task.description;
+    dueDateQuestion.initial = task.dueDate;
   }
 
   ////////
 
-  return prompts([textQuestion, stateQuestion, groupQuestion, descriptionQuestion]);
+  const questions = [textQuestion, stateQuestion, groupQuestion, descriptionQuestion, dueDateQuestion];
+  if (!task) {
+    questions.push(templateQuestion);
+  }
+
+  return prompts(questions);
 };

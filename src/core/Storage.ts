@@ -43,6 +43,7 @@ export const DEFAULT_STORAGE_DATAS: StorageFile = {
 export type Meta = {
   states: TaskState[];
   groups?: TaskGroup[];
+  templates?: TaskTemplate[];
 };
 
 export type TaskState = {
@@ -54,6 +55,11 @@ export type TaskState = {
 export type TaskGroup = {
   name: string;
   hexColor: string;
+};
+
+export type TaskTemplate = {
+  name: string;
+  subtasks: ITask[];
 };
 
 export type StorageFile = {
@@ -81,6 +87,7 @@ export class Storage {
     this.tasks = new TaskList(datas, meta);
     this.meta = meta;
     if (!this.meta.groups) this.meta.groups = [];
+    if (!this.meta.templates) this.meta.templates = [];
   }
 
   ////////////////////////////////////////

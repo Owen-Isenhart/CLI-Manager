@@ -30,7 +30,7 @@ export class ActionHandler {
     const { argHandler, storage, config, printer, finalStorageLocation } = this.mainController;
     const { words, flags, infos } = argHandler;
     const { dataAttributes, isRecursive } = flags;
-    const { state, description, priority, group } = dataAttributes;
+    const { state, description, priority, group, dueDate, template } = dataAttributes;
     const [firstArg, secondArg, thirdArg] = words;
 
     if (!storage) throw new StorageError(`Can't find the task storage file '${finalStorageLocation}'`);
@@ -45,13 +45,24 @@ export class ActionHandler {
           id = await Prompt.addTask(storage, secondArg?.value as number);
           printer.setView('specific', id);
         } else {
-          const task: Task = new Task({
+          let taskData: ITask = {
             name: argHandler.getFirstText(),
             state: state || storage.meta.states[0].name,
             description,
             priority,
             group,
-          });
+
+            dueDate,
+          };
+
+          if (template) {
+            const templateData = storage.meta.templates?.find((t) => t.name === template);
+            if (templateData) {
+              taskData.subtasks = templateData.subtasks;
+            }
+          }
+
+          const task: Task = new Task(taskData);
 
           let subTaskOf = undefined;
           if (isTask(secondArg)) {
@@ -92,6 +103,7 @@ export class ActionHandler {
             description,
             priority,
             group,
+            dueDate,
           };
 
           if (!name) delete newAttributes.name;
@@ -99,6 +111,7 @@ export class ActionHandler {
           if (!description) delete newAttributes.description;
           if (!priority) delete newAttributes.priority;
           if (!group) delete newAttributes.group;
+          if (!dueDate) delete newAttributes.dueDate;
 
           const { ids, textID, textTask } = idsController(storage, secondArg.value as number | number[]);
 
@@ -249,6 +262,50 @@ export class ActionHandler {
           printer
             .addFeedback('Groups management:')
             .addFeedback(storage.meta.groups.map((g) => `- ${g.name} (${g.hexColor})`));
+        }
+        printer.print();
+        break;
+      }
+
+      case Action.TEMPLATE: {
+        const subAction = secondArg?.value as string;
+        const templateName = thirdArg?.value as string;
+
+        if (subAction === 'add') {
+          if (!templateName) {
+            printer.addFeedback('Usage: task t add <name>').print();
+            return;
+          }
+          const existing = storage.meta.templates?.find((t) => t.name === templateName);
+          if (existing) {
+            printer.addFeedback(`Template '${templateName}' already exists`).print();
+            return;
+          }
+          storage.meta.templates?.push({ name: templateName, subtasks: [] });
+          storage.save();
+          printer.addFeedback(`Template '${templateName}' created (use 'task a --template ${templateName}' to use it)`);
+        } else if (subAction === 'remove') {
+          if (!templateName) {
+            printer.addFeedback('Usage: task t remove <name>').print();
+            return;
+          }
+          const initialLength = storage.meta.templates?.length || 0;
+          storage.meta.templates = storage.meta.templates?.filter((t) => t.name !== templateName);
+          const finalLength = storage.meta.templates?.length || 0;
+          if (initialLength === finalLength) {
+            printer.addFeedback(`Template '${templateName}' not found`).print();
+            return;
+          }
+          storage.save();
+          printer.addFeedback(`Template '${templateName}' removed`);
+        } else {
+          printer
+            .addFeedback('Templates:')
+            .addFeedback(
+              (storage.meta.templates || []).length === 0
+                ? ['(no templates defined)']
+                : (storage.meta.templates || []).map((t) => `- ${t.name}`),
+            );
         }
         printer.print();
         break;

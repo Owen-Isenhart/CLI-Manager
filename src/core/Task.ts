@@ -1,4 +1,5 @@
 import chalk from 'chalk';
+import moment from 'moment';
 
 import { PrinterConfig } from './Printer';
 import { Meta } from './Storage';
@@ -18,6 +19,7 @@ export type ITask = {
   state?: string;
   priority?: number;
   group?: string;
+  dueDate?: string;
 };
 
 export interface StringifyArgs extends PrinterConfig {
@@ -38,8 +40,8 @@ export class Task implements ITask {
   timestamp?: string;
   state?: string;
   priority?: number;
-  tags?: string[];
   group?: string;
+  dueDate?: string;
 
   /////
 
@@ -48,6 +50,11 @@ export class Task implements ITask {
 
     if (!task.subtasks || task.subtasks.length === 0) delete this.subtasks;
     else this.subtasks = task.subtasks.map((sub) => new Task(sub));
+
+    // Normalize dueDate to string
+    if (this.dueDate && typeof this.dueDate !== 'string') {
+      this.dueDate = String(this.dueDate);
+    }
   }
 
   /////
@@ -161,8 +168,21 @@ export class Task implements ITask {
       coloredGroup = chalk.hex(color)(` [${this.group}]`);
     }
 
+    let coloredDueDate = '';
+    if (this.dueDate) {
+      let dueDate = this.dueDate;
+      if (typeof dueDate !== 'string') dueDate = String(dueDate);
+      const isOverdue = moment(dueDate, TIMESTAMP_FORMAT).isBefore(moment());
+      const color = isOverdue ? chalk.bold.red : chalk.yellow;
+      coloredDueDate = color(` [${dueDate}]`);
+    }
+
     const fullLine =
-      `${coloredID}${MARGIN}${indentation}${coloredIcon}` + coloredPriority + coloredGroup + ` ${coloredName}`;
+      `${coloredID}${MARGIN}${indentation}${coloredIcon}` +
+      coloredPriority +
+      coloredGroup +
+      coloredDueDate +
+      ` ${coloredName}`;
     toReturn.push(fullLine);
 
     ////////////////////

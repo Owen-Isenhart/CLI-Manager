@@ -23,6 +23,8 @@ Will store inside a local file your tasks in a simple JSON format so you can tra
     - [The config file](#the-config-file)
   - [Printing arguments](#printing-arguments)
   - [Commands](#commands)
+    - [Managing Deadlines](#managing-deadlines)
+    - [Managing Templates](#managing-templates)
 - [Intended workflow](#intended-workflow)
 - [Changelog](#changelog)
 
@@ -172,9 +174,11 @@ Can either be passed as CLI arguments or stored in the [config file](#the-config
 | --hide-completed     | --show-completed   | "hideCompleted": true                    | Hide tasks which reached final state      |
 | --hide-tree          | /                  | "hideTree": true                         | Hide tree branches                        |
 | --no-print           | --print            | "shouldNotPrintAfter": true              | Don't print task list after edition       |
-| --group \<attribute> | /                  | "group": "state"                         | Group by attribute (state, id, priority, group)  |
+| --group \<attribute> | /                  | "group": "state"                         | Group by attribute (state, id, priority, group, dueDate)  |
 | --sort \<asc\| desc> | /                  | "sort": "desc"                           | Sort order                                |
 | --clear              | --no-clear         | "clearBefore": false                     | Clear before printing                     |
+| --due \<DD/MM/YYYY>  | /                  | /                                        | Set due date for task                     |
+| --template \<name>   | /                  | /                                        | Use template for new task                 |
 
 
 > **Priority:** CLI arg > CLI 'bypass' arg > Config file attribute
@@ -214,6 +218,21 @@ task i 11,14 -r	# Pass tasks 11 and 14 and their subtasks to next state, "Increm
 task g # List all defined groups in metadata
 task g add 'personal' '#ff8f00' # Add a new known group with a color
 task g remove 'personal' # Remove a group from metadata
+
+# Managing Deadlines
+task a 'Finish report' --due 25/12/2026 # Create a task with a due date (DD/MM/YYYY format)
+task e 5 --due 15/01/2027 # Set or update a task's due date
+task --group dueDate # Group and sort tasks by due date (earliest first)
+
+Due dates are displayed on tasks in yellow for future dates, and in bold red if the deadline has passed.
+
+# Managing Templates
+task t # List all defined templates
+task t add 'sprint' # Create a new template named 'sprint'
+task t remove 'sprint' # Remove a template
+task a 'Sprint Work' --template sprint # Create a task and apply template subtasks
+
+Templates allow you to create reusable task structures. When you add a template, it stores the template name. When creating a task with a template, any subtasks previously defined in that template will be automatically added to the new task.
 
 # Moving tasks
 task mv 9,7,11 3	# Move multiple tasks and subtasks to task as subtasks (maintining tree structure)

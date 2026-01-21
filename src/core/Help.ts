@@ -34,6 +34,7 @@ export type ManEntries = {
 
   extracting: ManPage;
   groupManagement: ManPage;
+  templateManagement: ManPage;
 };
 
 type ManEntryKey = keyof ManEntries;
@@ -62,6 +63,7 @@ class Help implements ManEntries {
   extracting: ManPage;
   deleting: ManPage;
   groupManagement: ManPage;
+  templateManagement: ManPage;
 
   ////////////////////
 
@@ -80,6 +82,9 @@ class Help implements ManEntries {
       '--depth <n> : Print every tasks and also n levels of subtasks',
       `--group <(${handledGroupings.map((str) => str)})> : Group by attribute`,
       `--sort <(${handledOrder.map((str) => str)})> : Sort order`,
+
+      '--due <DD/MM/YYYY> : Set due date for task',
+      '--template <name> : Use template for new task',
       `--hide-description : Hide tasks descriptions ; ${bold("'hideDescription' in the config file")}`,
       `--show-description : Bypass the 'hideDescription' argument in config file`,
       `--hide-tree : Hide tree branches ; ${bold("'hideTree' in the config file")}`,
@@ -224,6 +229,21 @@ class Help implements ManEntries {
       furtherDescription: ['Groups are used to categorize tasks and add color coding to the display'],
       globalArgs: false,
     };
+
+    this.templateManagement = {
+      title: 'Managing templates',
+      prototype: 'task t [add|remove] [<name>]',
+      argDef: [
+        'add <name> : Create a new template for task subtasks',
+        'remove <name> : Remove a template from metadata',
+        '(no args) : List all defined templates',
+      ],
+      furtherDescription: [
+        'Templates allow you to predefine a structure of subtasks that can be reused when creating new tasks',
+        'Use: task a <task name> --template <template-name>',
+      ],
+      globalArgs: false,
+    };
   }
 
   ////////////////////
@@ -245,6 +265,7 @@ class Help implements ManEntries {
       'deleting',
       'extracting',
       'groupManagement',
+      'templateManagement',
     ];
 
     entries.forEach((entry) => {

@@ -13,7 +13,7 @@ import { Meta } from './Storage';
 
 ////////////////////////////////////////
 
-export const handledGroupings = ['state', 'priority', 'id', 'group'] as const;
+export const handledGroupings = ['state', 'priority', 'id', 'group', 'dueDate'] as const;
 export type GroupByType = (typeof handledGroupings)[number];
 
 export const handledOrder = ['asc', 'desc'] as const;
@@ -372,6 +372,23 @@ export class TaskList extends Array<Task> {
           if (!b.group) return 1;
 
           return a.group.localeCompare(b.group);
+        };
+
+        break;
+      }
+
+      //////////
+
+      case 'dueDate': {
+        sortFunction = (a: Task, b: Task) => {
+          if (!a.dueDate && !b.dueDate) return 0;
+          if (!a.dueDate) return 1;
+          if (!b.dueDate) return -1;
+
+          const dateA = moment(a.dueDate, TIMESTAMP_FORMAT);
+          const dateB = moment(b.dueDate, TIMESTAMP_FORMAT);
+
+          return dateA.isBefore(dateB) ? -1 : 1;
         };
 
         break;

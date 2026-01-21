@@ -17,6 +17,7 @@ export enum Action {
   MOVE = 'mv',
   EXTRACT = 'x',
   GROUP = 'g',
+  TEMPLATE = 't',
 }
 
 // TODO refactor with array string type like group & sort and aggreagate between global args and commands
@@ -55,8 +56,9 @@ export enum ValueFlag {
   SORT = '--sort',
   STATE = '-s',
   DESCRIPTION = '-d',
-  TAG = '-t',
   GROUP = '-g',
+  DUE = '--due',
+  TEMPLATE = '--template',
 }
 
 type FlagType = ValueFlag | BooleanFlag | OnOffFlag;
@@ -74,6 +76,8 @@ export interface DataAttributes {
   state?: string;
   priority?: number;
   group?: string;
+  dueDate?: string;
+  template?: string;
 }
 
 export interface HandledFlags {
@@ -136,7 +140,9 @@ export class CliArgHandler {
         dataAttributes?.state ||
         dataAttributes?.description ||
         dataAttributes?.priority ||
-        dataAttributes?.group
+        dataAttributes?.group ||
+        dataAttributes?.dueDate ||
+        dataAttributes?.template
       ),
     };
   }
@@ -245,6 +251,8 @@ export class CliArgHandler {
     const state = this.getValueFlag(ValueFlag.STATE) as string;
     const description = this.getValueFlag(ValueFlag.DESCRIPTION) as string;
     const group = this.getValueFlag(ValueFlag.GROUP) as string;
+    const dueDate = this.getValueFlag(ValueFlag.DUE) as string;
+    const template = this.getValueFlag(ValueFlag.TEMPLATE) as string;
     const priority = this.getPriority();
 
     return {
@@ -252,13 +260,15 @@ export class CliArgHandler {
       description,
       priority,
       group,
+      dueDate,
+      template,
     };
   };
 
   private rawParse = (args: string[]): RawArg[] => {
     const parsedArgs: RawArg[] = [];
 
-    const isNumber = (str: string) => !isNaN(parseInt(str)) && !isNaN(parseFloat(str));
+    const isNumber = (str: string) => /^\d+$/.test(str);
 
     for (let i = 0; i < args.length; i++) {
       const theArg = args[i];
