@@ -45,11 +45,21 @@ export class Task implements ITask {
 
   /////
 
-  constructor(task: Partial<ITask>) {
+  constructor(task: Partial<ITask>, meta?: Meta) {
+    // Add meta here
     Object.assign(this, task);
 
-    if (!task.subtasks || task.subtasks.length === 0) delete this.subtasks;
-    else this.subtasks = task.subtasks.map((sub) => new Task(sub));
+    // If no state is provided and meta is available, default to the first state
+    if (!this.state && meta && meta.states && meta.states.length > 0) {
+      this.state = meta.states[0].name;
+    }
+
+    if (!task.subtasks || task.subtasks.length === 0) {
+      delete this.subtasks;
+    } else {
+      // Pass the meta down to children recursively
+      this.subtasks = task.subtasks.map((sub) => new Task(sub, meta));
+    }
 
     // Normalize dueDate to string
     if (this.dueDate && typeof this.dueDate !== 'string') {
@@ -127,7 +137,14 @@ export class Task implements ITask {
     const isFinalState = this.state === states[states.length - 1].name;
     const taskState = states.filter((state) => this.state === state.name)[0];
 
-    const coloredID = chalk.hex(taskState.hexColor)(`${this.id}.`);
+    if (!taskState) {
+      console.error(`Task ${this.id} (${this.name}) has invalid state: ${this.state}`);
+      // Fallback to avoid crash during debug
+      // return [];
+    }
+
+    const hexColor = taskState?.hexColor || '#ffffff';
+    const coloredID = this.id !== undefined ? chalk.hex(hexColor)(`${this.id}.`) : '';
 
     if (hideCompleted && isFinalState) return toReturn;
 
@@ -157,7 +174,7 @@ export class Task implements ITask {
       return text;
     };
 
-    const coloredIcon = chalk.hex(taskState.hexColor)(taskState.icon);
+    const coloredIcon = chalk.hex(hexColor)(taskState?.icon || '?');
     const coloredName = isFinalState ? chalk.strikethrough.grey(this.name) : this.name;
     const coloredPriority = this.priority ? chalk.bold.red(' ' + getPriorityText()) : '';
 

@@ -59,6 +59,7 @@ export enum ValueFlag {
   GROUP = '-g',
   DUE = '--due',
   TEMPLATE = '--template',
+  SUBTASKS = '-subs',
 }
 
 type FlagType = ValueFlag | BooleanFlag | OnOffFlag;
@@ -78,6 +79,7 @@ export interface DataAttributes {
   group?: string;
   dueDate?: string;
   template?: string;
+  subtasks?: string[];
 }
 
 export interface HandledFlags {
@@ -253,6 +255,11 @@ export class CliArgHandler {
     const group = this.getValueFlag(ValueFlag.GROUP) as string;
     const dueDate = this.getValueFlag(ValueFlag.DUE) as string;
     const template = this.getValueFlag(ValueFlag.TEMPLATE) as string;
+
+    // Fetch the subtasks flag
+    const subtasksRaw = this.getValueFlag(ValueFlag.SUBTASKS) as string;
+    const subtasks = subtasksRaw ? subtasksRaw.split(',').map((s) => s.trim()) : undefined;
+
     const priority = this.getPriority();
 
     return {
@@ -262,6 +269,7 @@ export class CliArgHandler {
       group,
       dueDate,
       template,
+      subtasks,
     };
   };
 

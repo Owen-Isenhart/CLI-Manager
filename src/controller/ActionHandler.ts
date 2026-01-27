@@ -62,7 +62,7 @@ export class ActionHandler {
             }
           }
 
-          const task: Task = new Task(taskData);
+          const task: Task = new Task(taskData, storage.meta);
 
           let subTaskOf = undefined;
           if (isTask(secondArg)) {
@@ -270,20 +270,25 @@ export class ActionHandler {
       case Action.TEMPLATE: {
         const subAction = secondArg?.value as string;
         const templateName = thirdArg?.value as string;
+        const subtasks = dataAttributes?.subtasks;
 
         if (subAction === 'add') {
           if (!templateName) {
-            printer.addFeedback('Usage: task t add <name>').print();
+            printer.addFeedback('Usage: task t add <name> [-s "sub1,sub2"]').print();
             return;
           }
+
+          const templateSubtasks: ITask[] = subtasks ? subtasks.map((name: string) => ({ name })) : [];
+
           const existing = storage.meta.templates?.find((t) => t.name === templateName);
           if (existing) {
-            printer.addFeedback(`Template '${templateName}' already exists`).print();
-            return;
+            existing.subtasks = templateSubtasks;
+            printer.addFeedback(`Template '${templateName}' updated with ${templateSubtasks.length} subtasks`);
+          } else {
+            storage.meta.templates?.push({ name: templateName, subtasks: templateSubtasks });
+            printer.addFeedback(`Template '${templateName}' created with ${templateSubtasks.length} subtasks`);
           }
-          storage.meta.templates?.push({ name: templateName, subtasks: [] });
           storage.save();
-          printer.addFeedback(`Template '${templateName}' created (use 'task a --template ${templateName}' to use it)`);
         } else if (subAction === 'remove') {
           if (!templateName) {
             printer.addFeedback('Usage: task t remove <name>').print();

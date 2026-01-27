@@ -33,8 +33,23 @@ export class MainController {
 
     if (System.doesFileExists(DEFAULT_CONFIG_FILE_NAME)) this.config = new Config(DEFAULT_CONFIG_FILE_NAME);
 
-    this.finalStorageLocation =
-      this.argHandler.flags.storageLocation || this.config?.storageFile || DEFAULT_STORAGE_FILE_NAME;
+    const globalStorage = System.getGlobalStoragePath();
+    const localStorage = DEFAULT_STORAGE_FILE_NAME;
+
+    if (this.argHandler.flags.storageLocation) {
+      this.finalStorageLocation = this.argHandler.flags.storageLocation;
+    } else if (this.config?.storageFile) {
+      this.finalStorageLocation = this.config.storageFile;
+    } else if (System.doesFileExists(localStorage)) {
+      this.finalStorageLocation = localStorage;
+    } else {
+      this.finalStorageLocation = globalStorage;
+
+      if (!System.doesFileExists(globalStorage)) {
+        StorageFactory.init(globalStorage);
+        new Printer().addFeedback(`Initialized global storage at ${globalStorage}`).printFeedback();
+      }
+    }
 
     this.handleCreatingFiles();
 
@@ -81,7 +96,7 @@ export class MainController {
         System.writeJSONFile(DEFAULT_CONFIG_FILE_NAME, DEFAULT_CONFIG_DATAS);
         printer.addFeedback(`Config file '${DEFAULT_CONFIG_FILE_NAME}' created`);
       } else if (isStorageCreate) {
-        const storagePath = (secondArg?.value as string) || DEFAULT_STORAGE_FILE_NAME;
+        const storagePath = (secondArg?.value as string) || this.finalStorageLocation;
 
         if (System.doesFileExists(storagePath)) throw new StorageError(`Storage file '${storagePath}' already exists`);
 

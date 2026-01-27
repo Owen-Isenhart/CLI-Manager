@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 
 import { FileNotFoundError, JSONParseError, SaveFileError } from '../errors/FileErrors';
 import { StorageFile } from './Storage';
@@ -15,6 +16,15 @@ export namespace System {
    */
   export const getAbsolutePath = (filePath: string) =>
     path.isAbsolute(filePath) ? filePath : path.join(process.cwd(), filePath);
+
+  export const getGlobalStoragePath = () => path.join(os.homedir(), '.cli-manager', 'tasks.json');
+
+  export const createDirectory = (filePath: string) => {
+    const dir = path.dirname(filePath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+  };
 
   ////////////////////
 
@@ -42,7 +52,9 @@ export namespace System {
 
   export const writeJSONFile = (relativePath: string, datas: StorageFile | ConfigFile): any => {
     try {
-      fs.writeFileSync(getAbsolutePath(relativePath), JSON.stringify(datas, null, 4));
+      const absolutePath = getAbsolutePath(relativePath);
+      createDirectory(absolutePath);
+      fs.writeFileSync(absolutePath, JSON.stringify(datas, null, 4));
     } catch (error) {
       throw new SaveFileError(relativePath, error);
     }

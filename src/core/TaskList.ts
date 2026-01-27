@@ -48,7 +48,7 @@ export class TaskList extends Array<Task> {
     if (items) {
       this.push(
         ...items.map((item) => {
-          const task = new Task(item);
+          const task = new Task(item, meta);
 
           if (meta) {
             const doesStateExists = this.availableStatesNames.includes(task.state);
@@ -91,7 +91,11 @@ export class TaskList extends Array<Task> {
   /** @override */
   push = (...tasks: Task[]) => {
     tasks.forEach((task: Task) => {
-      const containedIDS = task.straightTask().map((within) => within.id);
+      // Collect all IDs in the tree, but FILTER OUT undefined
+      const containedIDS = task
+        .straightTask()
+        .map((within) => within.id)
+        .filter((id) => id !== undefined); // This is the critical fix
 
       containedIDS.forEach((id) => {
         if (this.allIDs.includes(id)) throw new TaskIdDuplicatedError(id);
