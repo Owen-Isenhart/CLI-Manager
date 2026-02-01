@@ -2,6 +2,7 @@ import { PrinterFactory } from '../core/Printer';
 import { StorageFactory } from '../core/Storage';
 import { ITask, Task } from '../core/Task';
 import { Prompt } from '../core/Prompt';
+import { GitFactory } from '../core/Git';
 import {
   EditingSyntaxError,
   CheckingTaskSyntaxError,
@@ -10,6 +11,7 @@ import {
   MovingTaskSyntaxError,
   ExtractSyntaxError,
   StorageError,
+  GitError,
 } from '../errors/CLISyntaxErrors';
 import { Action, isTask, isText } from './CliArgHandler';
 import { idsController } from './IDSController';
@@ -274,7 +276,7 @@ export class ActionHandler {
 
         if (subAction === 'add') {
           if (!templateName) {
-            printer.addFeedback('Usage: task t add <name> [-s "sub1,sub2"]').print();
+            printer.addFeedback('Usage: task t add <name> [-subs "sub1,sub2"]').print();
             return;
           }
 
@@ -313,6 +315,102 @@ export class ActionHandler {
             );
         }
         printer.print();
+        break;
+      }
+
+      ////////////////////
+
+      case Action.GIT_INIT: {
+        const subAction = secondArg?.value as string;
+
+        if (subAction === 'init') {
+          // Get remote URL and optional parameters
+          const remoteUrl = thirdArg?.value as string;
+
+          if (!remoteUrl) {
+            printer
+              .addFeedback('Usage: task git init <remote-url> [remote-name] [branch-name]')
+              .addFeedback('Example: task git init https://github.com/user/repo.git origin main')
+              .print();
+            return;
+          }
+
+          const remoteName = words[3]?.value as string | undefined;
+          const branchName = words[4]?.value as string | undefined;
+
+          const git = GitFactory.create(finalStorageLocation);
+
+          try {
+            await git.init(remoteUrl, remoteName || 'origin', branchName || 'main');
+            printer.addFeedback(`Git repository initialized with remote: ${remoteUrl}`).print();
+          } catch (error) {
+            throw new GitError(`Failed to initialize Git: ${error instanceof Error ? error.message : String(error)}`);
+          }
+        } else if (subAction === 'push') {
+          const git = GitFactory.create(finalStorageLocation);
+
+          if (!git.isGitInitialized()) {
+            throw new GitError('Git is not initialized. Run "task git init <remote-url>" first.');
+          }
+
+          try {
+            git.commitAndPush();
+            printer.addFeedback('Changes committed and pushed to remote repository').print();
+          } catch (error) {
+            throw new GitError(`Failed to push: ${error instanceof Error ? error.message : String(error)}`);
+          }
+        } else if (subAction === 'pull') {
+          const git = GitFactory.create(finalStorageLocation);
+
+          if (!git.isGitInitialized()) {
+            throw new GitError('Git is not initialized. Run "task git init <remote-url>" first.');
+          }
+
+          try {
+            git.pull();
+            printer.addFeedback('Changes pulled from remote repository').print();
+          } catch (error) {
+            throw new GitError(`Failed to pull: ${error instanceof Error ? error.message : String(error)}`);
+          }
+        } else if (subAction === 'status') {
+          const git = GitFactory.create(finalStorageLocation);
+
+          if (!git.isGitInitialized()) {
+            printer.addFeedback('Git is not initialized. Run "task git init <remote-url>" first.').print();
+            return;
+          }
+
+          const status = git.getStatus();
+          printer
+            .addFeedback('Git Status:')
+            .addFeedback(status || '(no changes)')
+            .print();
+        } else {
+          const git = GitFactory.create(finalStorageLocation);
+          if (git.isGitInitialized()) {
+            const config = git.getConfig();
+            printer
+              .addFeedback('Git is initialized with:')
+              .addFeedback(`Remote: ${config?.remoteUrl}`)
+              .addFeedback(`Remote Name: ${config?.remoteName}`)
+              .addFeedback(`Branch: ${config?.branchName}`)
+              .addFeedback('')
+              .addFeedback('Available commands:')
+              .addFeedback('  task git init <url> [remote-name] [branch-name] - Initialize Git')
+              .addFeedback('  task git push - Commit and push changes')
+              .addFeedback('  task git pull - Pull changes from remote')
+              .addFeedback('  task git status - View Git status');
+          } else {
+            printer
+              .addFeedback('Git is not initialized. Initialize Git with:')
+              .addFeedback('  task git init <remote-url> [remote-name] [branch-name]')
+              .addFeedback('')
+              .addFeedback('Example:')
+              .addFeedback('  task git init https://github.com/user/repo.git origin main');
+          }
+          printer.print();
+        }
+
         break;
       }
     }

@@ -5,3 +5,5 @@ coverage/
 *.swp
 
 .env
+
+.cli-manager-git.json

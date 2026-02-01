@@ -25,6 +25,7 @@ Will store inside a local file your tasks in a simple JSON format so you can tra
   - [Commands](#commands)
     - [Managing Deadlines](#managing-deadlines)
     - [Managing Templates](#managing-templates)
+    - [Git Synchronization](#git-synchronization)
 - [Intended workflow](#intended-workflow)
 - [Changelog](#changelog)
 
@@ -229,10 +230,34 @@ Due dates are displayed on tasks in yellow for future dates, and in bold red if 
 # Managing Templates
 task t # List all defined templates
 task t add 'sprint' # Create a new template named 'sprint'
+task t add 'sprint' -subs 'design,development,testing' # Create template with subtasks
 task t remove 'sprint' # Remove a template
 task a 'Sprint Work' --template sprint # Create a task and apply template subtasks
 
 Templates allow you to create reusable task structures. When you add a template, it stores the template name. When creating a task with a template, any subtasks previously defined in that template will be automatically added to the new task.
+
+# Git Synchronization
+
+Synchronize your tasks across multiple devices using a remote Git repository.
+
+```sh
+# Initialize Git with a remote repository
+task git init https://github.com/user/tasks.git origin main
+
+# Manually push changes (auto-sync happens automatically on task changes)
+task git push
+
+# Pull changes from remote
+task git pull
+
+# View Git status
+task git status
+
+# View Git configuration
+task git
+```
+
+Once initialized, task changes are **automatically committed and pushed** to your remote repository, enabling seamless synchronization across devices. See [GIT_SETUP.md](./GIT_SETUP.md) for detailed setup instructions and multi-device workflows.
 
 # Moving tasks
 task mv 9,7,11 3	# Move multiple tasks and subtasks to task as subtasks (maintining tree structure)

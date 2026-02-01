@@ -3,6 +3,7 @@ import { TaskNotFoundError } from '../errors/TaskErrors';
 import { ITask, Task } from './Task';
 import { GroupByType, Order, TaskList } from './TaskList';
 import { System } from './System';
+import { Git, GitFactory } from './Git';
 
 ////////////////////////////////////////
 
@@ -77,6 +78,7 @@ export class Storage {
 
   tasks: TaskList;
   meta: Meta;
+  private git?: Git;
 
   ////////////////////////////////////////
 
@@ -88,6 +90,13 @@ export class Storage {
     this.meta = meta;
     if (!this.meta.groups) this.meta.groups = [];
     if (!this.meta.templates) this.meta.templates = [];
+
+    // Initialize Git instance if available
+    try {
+      this.git = GitFactory.create(this.relativePath);
+    } catch {
+      // Git not available, continue without it
+    }
   }
 
   ////////////////////////////////////////
@@ -138,7 +147,19 @@ export class Storage {
 
   ////////////////////////////////////////
 
-  save = () => System.writeJSONFile(this.relativePath, { meta: this.meta, datas: this.tasks });
+  save = () => {
+    System.writeJSONFile(this.relativePath, { meta: this.meta, datas: this.tasks });
+
+    // Auto-commit and push if Git is initialized
+    if (this.git && this.git.isGitInitialized()) {
+      try {
+        this.git.commitAndPush(`Task update at ${new Date().toISOString()}`);
+      } catch (error) {
+        // Silently fail if Git commit/push fails - don't break task operations
+        console.error(`Git auto-commit warning: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+  };
 }
 
 ////////////////////////////////////////

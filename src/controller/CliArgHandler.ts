@@ -9,6 +9,7 @@ import { GroupBySyntaxError } from '../errors/CLISyntaxErrors';
 export enum Action {
   CREATE_STORAGE = 'storage',
   CREATE_CONFIG = 'config',
+  GIT_INIT = 'git',
   ADD_TASK = 'a',
   CHECK = 'c',
   DELETE = 'd',

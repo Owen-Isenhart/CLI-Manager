@@ -91,3 +91,11 @@ export class ExtractSyntaxError extends CLISyntaxError {
     super(message, 'extracting', details);
   }
 }
+
+////////////////////////////////////////
+
+export class GitError extends CLISyntaxError {
+  constructor(message: string, details?: any) {
+    super(message, 'gitInitialization', details);
+  }
+}

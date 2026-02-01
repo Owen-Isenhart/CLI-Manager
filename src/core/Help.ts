@@ -22,6 +22,7 @@ type ManPage = {
 export type ManEntries = {
   createStorage: ManPage;
   createConfig: ManPage;
+  gitInitialization: ManPage;
 
   viewing: ManPage;
   editing: ManPage;
@@ -52,6 +53,7 @@ class Help implements ManEntries {
 
   createStorage: ManPage;
   createConfig: ManPage;
+  gitInitialization: ManPage;
 
   viewing: ManPage;
 
@@ -128,6 +130,34 @@ class Help implements ManEntries {
         )} to the CLI, see section below.`,
       ],
       globalArgs: true,
+    };
+
+    this.gitInitialization = {
+      title: 'Git Synchronization',
+      prototype: 'task git <subcommand> [<args>]',
+      argDef: [
+        'init <remote-url> [remote-name] [branch-name] : Initialize Git for task synchronization',
+        'push : Commit and push task changes to remote',
+        'pull : Pull task changes from remote',
+        'status : Show Git status',
+      ],
+      furtherDescription: [
+        'Initialize Git for your tasks to enable automatic synchronization across devices.',
+        `Once initialized with a remote repository, any task updates will ${bold('automatically commit and push')} to the remote.`,
+        `You can ${bold('pull')} changes on other devices to stay synchronized.`,
+        '',
+        'Example setup:',
+        '  1. Create a remote repository (GitHub, GitLab, etc.)',
+        '  2. Run: task git init https://github.com/user/repo.git origin main',
+        '  3. Your tasks will now auto-sync to the remote repository',
+        '  4. On another device, pull changes with: task git pull',
+      ],
+      examples: [
+        'Initialize Git with GitHub: task git init https://github.com/user/tasks.git',
+        'Push changes: task git push',
+        'Pull changes: task git pull',
+        'View status: task git status',
+      ],
     };
 
     this.viewing = {
@@ -232,11 +262,12 @@ class Help implements ManEntries {
 
     this.templateManagement = {
       title: 'Managing templates',
-      prototype: 'task t [add|remove] [<name>]',
+      prototype: 'task t [add|remove] [<name>] [-subs <subtask1,subtask2,...>]',
       argDef: [
         'add <name> : Create a new template for task subtasks',
         'remove <name> : Remove a template from metadata',
         '(no args) : List all defined templates',
+        '-subs <subtask1,subtask2,...> : Define subtasks for the template (comma-separated)',
       ],
       furtherDescription: [
         'Templates allow you to predefine a structure of subtasks that can be reused when creating new tasks',
@@ -256,6 +287,7 @@ class Help implements ManEntries {
     const entries: ManEntryKey[] = [
       'createStorage',
       'createConfig',
+      'gitInitialization',
       'viewing',
       'creatingTask',
       'editing',
@@ -309,6 +341,12 @@ class Help implements ManEntries {
         break;
       case Action.GROUP:
         toReturn = this.getMan('groupManagement');
+        break;
+      case Action.TEMPLATE:
+        toReturn = this.getMan('templateManagement');
+        break;
+      case Action.GIT_INIT:
+        toReturn = this.getMan('gitInitialization');
         break;
     }
 
